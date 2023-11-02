@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<style type="text/css">
+			:root {
+				/* replace 'img_url' with your animated image or regular image link */
+				--url: url("https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg");
+			}
+			html,
+			body {
+				background-color: #141414;
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				font-family: Consolas, monaco, monospace;
+				color: white;
+			}
+
+			.margin:first-child {
+				background-image: var(--url);
+				background-size: cover;
+				background-repeat: no-repeat;
+				background-attachment: fixed;
+			}
+
+			.lines-content:nth-of-type(1), .monaco-editor-background:nth-of-type(1) {
+				background-image: var(--url);
+				background-size: cover;
+				background-repeat: no-repeat;
+				background-attachment: fixed;
+			}
+	</style>
+	<meta charset="utf-8" />
+	<title></title>
+</head>
+
+<body>
+	<div id="container" style="width:100%;height:100%;"></div>
+	<script src="vs/loader.js"></script>
+	<script type="text/javascript">
+		require.config({
+			paths: {
+				'vs': 'vs'
+			}
+		});
+
+		var editor;
+		var Proposals = [];
+
+		var SetText;
+		var ShowMinimap;
+		var HideMinimap;
+		var EnableAutoComplete;
+		var DisableAutoComplete;
+		var GetText;
+		var AddIntellisense;
+		var Refresh;
+	
+
+
+		require(['vs/editor/editor.main'], function () {
+			function getDependencyProposals() {
+				return Proposals;
+			}
+
+			monaco.languages.registerCompletionItemProvider('lua', {
+				provideCompletionItems: function (model, position) {
+					return getDependencyProposals();
+				},
+
+			});
+			
+			monaco.editor.defineTheme('net-theme-dark', {
+				base: 'vs-dark',
+				inherit: true,
+				colors: {
+					"editor.background": '#141414', //ur background color
+				},
+				rules: [
+					{ token: 'global', foreground: 'FFFFFF', fontStyle: "bold" },
+					{ token: 'keyword', foreground: 'ff6a00', fontStyle: "bold" },
+					{ token: 'comment', foreground: '666666' },
+					{ token: 'number', foreground: 'ffc600' },
+					{ token: 'string', foreground: 'ff8c3a' },
+				]
+			});
+
+			editor = monaco.editor.create(document.getElementById('container'), {
+				language: 'lua',
+				theme: "net-theme-dark",
+				acceptSuggestionOnEnter: "smart",
+				suggestOnTriggerCharacters: true,
+				suggestSelection: "recentlyUsed",
+				folding: true,
+				wordBasedSuggestions : true,
+				scrollbar: {
+					verticalHasArrows: true,
+				},
+				dragAndDrop: true,
+				links: false,
+				minimap: {
+					enabled: false,
+				},
+				showFoldingControls: "always",
+				smoothScrolling: true,
+			});
+
+			EnableAutoComplete = function(){
+				editor.updateOptions({
+					suggestOnTriggerCharacters: true,
+					acceptSuggestionOnEnter : "smart",
+					wordBasedSuggestions : true
+				});
+			}
+
+			DisableAutoComplete = function(){
+				editor.updateOptions({
+					suggestOnTriggerCharacters: false,
+					acceptSuggestionOnEnter : "off",
+					wordBasedSuggestions : false
+				});
+			}
+
+			window.onresize = function () {
+				editor.layout();
+			};
+
+			ShowMinimap = function () {
+				editor.updateOptions({
+					minimap: {
+						enabled: true,
+					}
+				});
+			}
+
+			HideMinimap = function () {
+				editor.updateOptions({
+					minimap: {
+						enabled: false,
+					}
+				});
+			}
+
+			editor.onDidChangeModelContent(function (e) {
+				window.chrome.webview.postMessage(editor.getValue())
+			});
+
+			GetText = function () {
+				return editor.getValue();
+			}
+
+			SetText = function (x) {
+				editor.setValue(x);
+			}
+
+			AddIntellisense = function (l, k, d, i) {
+				var t;
+				switch (k) {
+					case "Class":
+						t = monaco.languages.CompletionItemKind.Class;
+						break;
+					case "Color":
+						t = monaco.languages.CompletionItemKind.Color;
+						break;
+					case "Constructor":
+						t = monaco.languages.CompletionItemKind.Constructor;
+						break;
+					case "Enum":
+						t = monaco.languages.CompletionItemKind.Enum;
+						break;
+					case "Field":
+						t = monaco.languages.CompletionItemKind.Field;
+						break;
+					case "File":
+						t = monaco.languages.CompletionItemKind.File;
+						break;
+					case "Folder":
+						t = monaco.languages.CompletionItemKind.Folder;
+						break;
+					case "Function":
+						t = monaco.languages.CompletionItemKind.Function;
+						break;
+					case "Interface":
+						t = monaco.languages.CompletionItemKind.Interface;
+						break;
+					case "Keyword":
+						t = monaco.languages.CompletionItemKind.Keyword;
+						break;
+					case "Method":
+						t = monaco.languages.CompletionItemKind.Method;
+						break;
+					case "Module":
+						t = monaco.languages.CompletionItemKind.Module;
+						break;
+					case "Property":
+						t = monaco.languages.CompletionItemKind.Property;
+						break;
+					case "Reference":
+						t = monaco.languages.CompletionItemKind.Reference;
+						break;
+					case "Snippet":
+						t = monaco.languages.CompletionItemKind.Snippet;
+						break;
+					case "Text":
+						t = monaco.languages.CompletionItemKind.Text;
+						break;
+					case "Unit":
+						t = monaco.languages.CompletionItemKind.Unit;
+						break;
+					case "Value":
+						t = monaco.languages.CompletionItemKind.Value;
+						break;
+					case "Variable":
+						t = monaco.languages.CompletionItemKind.Variable;
+						break;
+				}
+
+				Proposals.push({
+					label: l,
+					kind: t,
+					detail: d,
+					insertText: i
+				});
+			}
+			async function load() {
+				var Enums = ["ABTestLoadingStatus","AccessoryType","ActionType","ActuatorRelativeTo","ActuatorType","AdornCullingMode","AlignType","AlphaMode","AnalyticsEconomyAction","AnalyticsLogLevel","AnalyticsProgressionStatus","AnimationPriority","ApplyStrokeMode","AppShellActionType","AppShellFeature","AppUpdateStatus","AspectType","AssetFetchStatus","AssetType","AssetTypeVerification","AutoIndentRule","AutomaticSize","AvatarAssetType","AvatarContextMenuOption","AvatarItemType","AvatarPromptResult","Axis","BinType","BodyPart","BodyPartR15","BorderMode","BreakpointRemoveReason","BreakReason","BulkMoveMode","BundleType","Button","ButtonStyle","CageType","CameraMode","CameraPanMode","CameraType","CatalogCategoryFilter","CatalogSortType","CellBlock","CellMaterial","CellOrientation","CenterDialogType","ChatCallbackType","ChatColor","ChatMode","ChatPrivacyMode","ChatStyle","ClientAnimatorThrottlingMode","CollisionFidelity","CommandPermission","ComputerCameraMovementMode","ComputerMovementMode","ConnectionError","ConnectionState","ContextActionPriority","ContextActionResult","ControlMode","CoreGuiType","CreateOutfitFailure","CreatorType","CurrencyType","CustomCameraMode","DataStoreRequestType","DebuggerEndReason","DebuggerFrameType","DebuggerPauseReason","DebuggerStatus","DevCameraOcclusionMode","DevComputerCameraMovementMode","DevComputerMovementMode","DeveloperMemoryTag","DeviceType","DevTouchCameraMovementMode","DevTouchMovementMode","DialogBehaviorType","DialogPurpose","DialogTone","DominantAxis","DraftStatusCode","DraggerCoordinateSpace","DraggerMovementMode","EasingDirection","EasingStyle","ElasticBehavior","EnviromentalPhysicsThrottle","ErrorReporting","ExplosionType","FieldOfViewMode","FillDirection","FilterResult","Font","FontSize","FormFactor","FramerateManagerMode","FrameStyle","FriendRequestEvent","FriendStatus","FunctionalTestResult","GameAvatarType","GearGenreSetting","GearType","Genre","GraphicsMode","HandlesStyle","HighlightDepthMode","HorizontalAlignment","HoverAnimateSpeed","HttpCachePolicy","HttpContentType","HttpError","HttpRequestType","HumanoidCollisionType","HumanoidDisplayDistanceType","HumanoidHealthDisplayType","HumanoidOnlySetCollisionsOnStateChange","HumanoidRigType","HumanoidStateType","IKCollisionsMode","InfoType","InitialDockState","InlineAlignment","InOut","InputType","InterpolationThrottlingMode","IXPLoadingStatus","JointCreationMode","JointType","KeyCode","KeyInterpolationMode","KeywordFilterType","Language","LanguagePreference","LeftRight","LevelOfDetailSetting","Limb","LineJoinMode","ListDisplayMode","ListenerType","LoadCharacterLayeredClothing","Material","MembershipType","MeshPartDetailLevel","MeshPartHeads","MeshPartHeadsAndAccessories","MeshType","MessageType","ModelLevelOfDetail","ModifierKey","MouseBehavior","MoveState","NameOcclusion","NetworkOwnership","NewAnimationRuntimeSetting","NormalId","OutfitSource","OutputLayoutMode","OverrideMouseIconBehavior","PackagePermission","PacketPriority","ParticleOrientation","PartType","PathStatus","PathWaypointAction","PermissionLevelShown","PhysicsSimulationRate","PhysicsSteppingMethod","Platform","PlaybackState","PlayerActions","PlayerChatType","PoseEasingDirection","PoseEasingStyle","PrivilegeType","ProductLocationRestriction","ProductPurchaseDecision","ProximityPromptExclusivity","ProximityPromptInputType","ProximityPromptStyle","QualityLevel","R15CollisionType","RaycastFilterType","RenderFidelity","RenderingTestComparisonMethod","RenderPriority","ReturnKeyType","ReverbType","RibbonTool","RigType","RollOffMode","RotationType","RuntimeUndoBehavior","SavedQualitySetting","SaveFilter","ScaleType","ScreenOrientation","ScrollBarInset","ScrollingDirection","ServerAudioBehavior","SignalBehavior","SizeConstraint","SortDirection","SortOrder","SoundType","SpecialKey","StartCorner","Status","StreamingPauseMode","StudioCloseMode","StudioDataModelType","StudioScriptEditorColorCategories","StudioScriptEditorColorPresets","StudioStyleGuideColor","StudioStyleGuideModifier","Style","SurfaceConstraint","SurfaceGuiSizingMode","SurfaceType","SwipeDirection","TableMajorAxis","Technology","TeleportMethod","TeleportResult","TeleportState","TeleportType","TerrainAcquisitionMethod","TextChatMessageStatus","TextFilterContext","TextInputType","TextTruncate","TextureMode","TextureQueryType","TextXAlignment","TextYAlignment","ThreadPoolConfig","ThrottlingPriority","ThumbnailSize","ThumbnailType","TickCountSampleMethod","TopBottom","TouchCameraMovementMode","TouchMovementMode","TriStateBoolean","TweenStatus","UiMessageType","UITheme","UploadSetting","UserCFrame","UserInputState","UserInputType","VelocityConstraintMode","VerticalAlignment","VerticalScrollBarPosition","VibrationMotor","VideoQualitySettings","VirtualCursorMode","VirtualInputMode","VoiceChatState","VRTouchpad","VRTouchpadMode","WaterDirection","WaterForce","WrapLayerDebugMode","WrapTargetDebugMode","ZIndexBehavior"];
+                var Classes = ["ABTestService","Accessory","Accoutrement","Actor","AdService","AdvancedDragger","AlignOrientation","AlignPosition","AnalysticsSettings","AnalyticsService","AngularVelocity","Animation","AnimationController","AnimationTrack","Animator","AppStorageService","AppUpdateService","ArcHandles","AssetCounterService","AssetDeliveryProxy","AssetManagerService","AssetService","Atmosphere","Attachment","AvatarEditorService","Backpack","BackpackItem","BadgeService","BallSocketConstraint","BasePart","BasePlayerGui","BaseScript","BaseWrap","Beam","BevelMesh","BillboardGui","BinaryStringValue","BindableEvent","BindableFunction","BlockMesh","BloomEffect","BlurEffect","BodyAngularVelocity","BodyColors","BodyForce","BodyGyro","BodyMover","BodyPosition","BodyThrust","BodyVelocity","Bone","BoolValue","BoxHandleAdornment","BrickColorValue","BrowserService","BulkImportService","CacheableContentProvider","Camera","CatalogPages","CFrameValue","ChangeHistoryService","CharacterAppearance","CharacterMesh","Chat","ChorusSoundEffect","ClickDetector","ClientReplicator","Clothing","Clouds","ClusterPacketCache","CollectionService","Color3Value","ColorCorrectionEffect","CompressorSoundEffect","ConeHandleAdornment","Configuration","Constraint","ContentProvider","ContextActionService","Controller","ControllerService","CookiesService","CoreGui","CorePackages","CoreScript","CoreScriptSyncService","CornerWedgePart","CSGDictionaryService","CustomEvent","CustomEventReceiver","CylinderHandleAdornment","CylinderMesh","CylindricalConstraint","DataModel","DataModelMesh","DataModelSession","DataStorePages","DataStoreService","Debris","DebuggerBreakpoint","DebuggerManager","DebuggerWatch","DebugSettings","Decal","DepthOfFieldEffect","Dialog","DialogChoice","DistortionSoundEffect","DockWidgetPluginGui","DoubleConstrainedValue","DraftsService","Dragger","DynamicRotate","EchoSoundEffect","EmotesPages","EqualizerSoundEffect","EventIngestService","Explosion","FaceInstance","Feature","File","FileMesh","Fire","Flag","FlagStand","FlagStandService","FlangeSoundEffect","FloorWire","FlyweightService","Folder","ForceField","FormFactorPart","Frame","FriendPages","FriendService","FunctionalTest","GamepadService","GamePassService","GameSettings","GenericSettings","Geometry","GlobalDataStore","GlobalSettings","Glue","GoogleAnalyticsConfiguration","GroupService","GuiBase","GuiBase2d","GuiBase3d","GuiButton","GuidRegistryService","GuiLabel","GuiMain","GuiObject","GuiService","HandleAdornment","Handles","HandlesBase","HapticService","Hat","HeightmapImporterService","HingeConstraint","Hint","Hole","Hopper","HopperBin","HttpRbxApiService","HttpRequest","HttpService","Humanoid","HumanoidController","HumanoidDescription","ILegacyStudioBridge","ImageButton","ImageHandleAdornment","ImageLabel","InputObject","InsertService","InstanceAdornment","IntConstrainedValue","InternalContainer","IntValue","InventoryPages","JointInstance","JointsService","KeyboardService","Keyframe","KeyframeMarker","KeyframeSequence","KeyframeSequenceProvider","LanguageService","LayerCollector","LegacyStudioBridge","Light","Lighting","LineForce","LineHandleAdornment","LocalizationService","LocalizationTable","LocalScript","LocalStorageService","LoginService","LogService","LuaSettings","LuaSourceContainer","LuaWebService","ManualGlue","ManualSurfaceJointInstance","ManualWeld","MarketplaceService","MemStorageConnection","MemStorageService","MeshContentProvider","MeshPart","Message","MessagingService","Model","ModuleScript","Motor","Motor6D","MotorFeature","Mouse","MouseService","MultipleDocumentInterfaceInstance","NegateOperation","NetworkClient","NetworkMarker","NetworkPeer","NetworkReplicator","NetworkServer","NetworkSettings","NoCollisionConstraint","NonReplicatedCSGDictionaryService","NotificationService","NumberPose","NumberValue","ObjectValue","OrderedDataStore","OutfitPages","PackageLink","PackageService","Pages","Pants","ParabolaAdornment","Part","PartAdornment","ParticleEmitter","PartOperation","PartOperationAsset","Path","PathfindingService","PermissionsService","PhysicsService","PhysicsSettings","PitchShiftSoundEffect","Platform","Player","PlayerEmulatorService","PlayerGui","PlayerMouse","Players","PlayerScripts","Plugin","PluginAction","PluginDebugService","PluginDragEvent","PluginGui","PluginGuiService","PluginManager","PluginManagerInterface","PluginMenu","PluginMouse","PluginToolbar","PluginToolbarButton","PointLight","PointsService","PolicyService","Pose","PoseBase","PostEffect","PrismaticConstraint","ProximityPrompt","ProximityPromptService","PVAdornment","PVInstance","QWidgetPluginGui","RayValue","RbxAnalyticsService","ReflectionMetadata","ReflectionMetadataCallbacks","ReflectionMetadataClass","ReflectionMetadataClasses","ReflectionMetadataEnum","ReflectionMetadataEnumItem","ReflectionMetadataEnums","ReflectionMetadataEvents","ReflectionMetadataFunctions","ReflectionMetadataItem","ReflectionMetadataMember","ReflectionMetadataProperties","ReflectionMetadataYieldFunctions","RemoteEvent","RemoteFunction","RenderingTest","RenderSettings","ReplicatedFirst","ReplicatedScriptService","ReplicatedStorage","ReverbSoundEffect","RobloxPluginGuiService","RobloxReplicatedStorage","RocketPropulsion","RodConstraint","RopeConstraint","Rotate","RotateP","RotateV","RunningAverageItemDouble","RunningAverageItemInt","RunningAverageTimeIntervalItem","RunService","RuntimeScriptService","ScreenGui","Script","ScriptContext","ScriptDebugger","ScriptService","ScrollingFrame","Seat","Selection","SelectionBox","SelectionLasso","SelectionPartLasso","SelectionPointLasso","SelectionSphere","ServerReplicator","ServerScriptService","ServerStorage","ServiceProvider","SessionService","Shirt","ShirtGraphic","SkateboardController","SkateboardPlatform","Skin","Sky","SlidingBallConstraint","Smoke","Snap","SocialService","SolidModelContentProvider","Sound","SoundEffect","SoundGroup","SoundService","Sparkles","SpawnerService","SpawnLocation","SpecialMesh","SphereHandleAdornment","SpotLight","SpringConstraint","StandalonePluginScripts","StandardPages","StarterCharacterScripts","StarterGear","StarterGui","StarterPack","StarterPlayer","StarterPlayerScripts","Stats","StatsItem","Status","StopWatchReporter","StringValue","Studio","StudioData","StudioService","StudioTheme","SunRaysEffect","SurfaceAppearance","SurfaceGui","SurfaceLight","SurfaceSelection","TaskScheduler","Team","Teams","TeleportAsyncResult","TeleportOptions","TeleportService","Terrain","TerrainRegion","TestService","TextBox","TextButton","TextFilterResult","TextLabel","TextService","Texture","ThirdPartyUserService","TimerService","Tool","Torque","TotalCountTimeIntervalItem","TouchInputService","TouchTransmitter","Trail","Translator","TremoloSoundEffect","TriangleMeshPart","TrussPart","Tween","TweenBase","TweenService","UGCValidationService","UIAspectRatioConstraint","UIBase","UIComponent","UIConstraint","UICorner","UIGradient","UIGridLayout","UIGridStyleLayout","UILayout","UIListLayout","UIPadding","UIPageLayout","UIScale","UISizeConstraint","UITableLayout","UITextSizeConstraint","UnionOperation","UnvalidatedAssetService","UserGameSettings","UserInputService","UserService","UserSettings","UserStorageService","ValueBase","Vector3Value","VectorForce","VehicleController","VehicleSeat","VelocityMotor","VersionControlService","VideoFrame","ViewportFrame","VirtualInputManager","VirtualUser","Visit","VRService","WedgePart","Weld","WeldConstraint","Workspace","WorldModel","WorldRoot","WrapLayer","WrapTarget"];
+                var Constructors = ["Index","Axes","BrickColor","CatalogSearchParams","CFrame","ColorSequence","ColorSequenceKeypoint","DateTime","DockWidgetPluginGuiInfo","EnumItem","Enums","Faces","FloatCurveKey","Instance","NumberRange","NumberSequence","NumberSequenceKeypoint","OverlapParams","PathWaypoint","PhysicalProperties","Random","Ray","RaycastParams","RaycastResult","RBXScriptConnection","RBXScriptSignal","Rect","Region3","Region3int16","TweenInfo","UDim","UDim2","Vector2","Vector2int16","Vector3","Vector3int16"];
+                var ColorContructors = ["ColorSequence", "Color3", "ColorSequenceKeypoint"]
+                var Keywords = ["and","for","or","break","function","repeat","do","if","return","else","in","then","elseif","local","true","end","nil","until","false","not","while"];
+                var Folders = ["game", "secure"]
+                var Functions = ["new", "ipairs", "pairs", "next", "firesignal","makefolder","is_protosmasher_caller","clonefunction","setrawmetatable","syn_mouse2press","hookmetamethod","queue_on_teleport","gethwid","getrawmetatable","raw_request","syn_getrenv","is_krnl_closure","setfflag","getcallingscript","iscometclosure","getrenv","newcclosure","is_c_closure","getthreadcontext","isluau","replacefunction","setscriptable","loadstring","rconsoletitle","isexecutorclosure","syn_io_isfolder","hookfunction","isfile","mouse2release","isrbxactive","rconsoleinfo","make_readonly","rconsolename","getupvalue","syn_getgc","sha384_hash","unlockwindow","mousemoveabs","mouse1click","syn_io_read","setupvalue","isfolder","gethiddenproperty","identifyexecutor","makereadonly","rconsoleerr","isvalidlevel","iscclosure","keypress","syn_getinstances","getupvalues","rconsoleclear","makewriteable","syn_context_set","syn_keyrelease","make_writeable","messagebox","mouse2click","getinfo","sethiddenproperty","iscometfunction","base64_encode","loadfile","http_request","getconstant","syn_setfflag","rconsoleinputasync","clonefunc","queueonteleport","base64_decode","is_synapse_function","replacefunc","LoadLibrary","syn_getfflag","getconnections","checkcaller","request","get_nil_instances","getnilinstances","getinstances","setreadonly","getfflag","is_comet_closure","setsimulationradius","syn_io_isfile","restorefunc","detourfunction","validlevel","syn_mouse1press","setconstant","click_detector","getloadedmodules","KeyUp","getconstants","firetouchinterest","getsynasset","syn_keypress","syn_clipboard_set","get_script_function","is_our_closure","detour_function","delfile","replacecclosure","replaceclosure","readfile","KeyDown","gethui","setnamecallmethod","is_l_closure","hookfunc","fire_proximity_prompt","is_protosmasher_closure","RightClick","newtable","syn_getcallingscript","mousemoverel","syn_newcclosure","getcustomasset","syn_getloadedmodules","getnamecallmethod","syn_getmenv","get_calling_script","syn_mouse1release","syn_getsenv","delfolder","getgenv","keyrelease","syn_getreg","syn_islclosure","syn_io_listdir","syn_context_get","syn_mouse2release","syn_mouse1click","get_loaded_modules","set_thread_context","require","restorefunction","getfpscap","getmousestate","setmousestate","iswindowlocked","fireproximityprompt","mousescroll","lockwindow","is_luau","islclosure","get_thread_context","is_comet_function","mouse2press","KeyPress","getsenv","rconsolewarn","setclipboard","setthreadcontext","rconsoleprint","appendfile","getidentity","syn_getgenv","mouse1press","get_gc_objects","getgc","getproto","getprotos","mouse1release","setfpscap","LeftClick","syn_mousemoveabs","writefile","is_executor_closure","listfiles","get_fps_cap","fireclickdetector","isourclosure","rconsoleinput","getmenv","getreg","setidentity","set_thread_identity","messageboxasync","get_thread_identity","iswindowactive","isreadonly","set_fps_cap","getcallbackvalue"];
+                var GuiObjectProperties = ["Size", "Position", "AnchorPoint", "LayoutOrder", "BorderColor3", "BackgroundColor3", "BorderMode", "AutomaticSize", "Active"]
+                var GuiObjectEvents = ["InputBegan", "InputChanged", "InputEnded", "MouseEnter", "MouseLeave", "MouseMoved", "MouseWheelBackward", "MouseWheelForward", "SelectionGained"]
+                var InstanceProperties = ["Parent", "Name", "RobloxLocked", "SourceAssetId", "Archiviable"]
+				var InstanceEvents = ["Destroying", "AncestryChanged", "AttributeChanged", "Changed", "ChildAdded", "ChildRemoving", "DescendantAdded", "DescendantRemoving"]
+                var Modules = ["Drawing", "debug", "coroutine", "math", "os", "string", "bit32", "utf8", "table"]
+
+                var ServiceMethods = ["game:GetService", "game:service", "game:getService"]
+				for (const Key of Classes)
+                    AddIntellisense(Key, "Class", "Instance", Key);
+
+				for (const Key of ColorContructors)
+                    AddIntellisense(Key, "Color", Key, Key);
+
+                for (const Key of Constructors)
+                    AddIntellisense(Key, "Constructor", Key, Key);
+
+                for (const Key of Enums)
+                    AddIntellisense(`Enum["${Key}"]`, "Enum", Key, `Enum["${Key}"]`);
+
+                for (const Key of Folders)
+                    AddIntellisense(Key, "Folder", Key, Key);
+
+                for (const Key of Functions)
+                    AddIntellisense(Key, "Function", Key, `${Key}()`);
+
+                for (const Key of Keywords)
+                    AddIntellisense(Key, "Keyword", Key, Key);
+
+                for (const Key of ServiceMethods)
+                    AddIntellisense(`${Key}()`, "Method", `Returns service.`, `${Key}()`);
+
+                for (const Key of Modules)
+                    AddIntellisense(Key, "Module", Key, Key);
+
+                for (const Key of InstanceEvents)
+                    AddIntellisense(Key, "Event", "Event of Instance", `${Key}:Connect()`);
+
+                for (const Key of GuiObjectEvents)
+                    AddIntellisense(Key, "Event", "Event of GuiObject", `${Key}:Connect()`);
+
+                for (const Key of GuiObjectProperties)
+                    AddIntellisense(Key, "Variable", "GuiObject Property", `${Key} = `);
+
+                for (const Key of InstanceProperties)
+                    AddIntellisense(Key, "Variable", "Instance Property", `${Key} = `);
+
+                for (const Key of Values)
+                    AddIntellisense(Key, "Value", Key, Key);
+
+			}
+			load();
+			Refresh = function () {
+				var text = GetText();
+				SetText("");
+				editor.trigger('keyboard', 'type', {
+					text: text
+				});
+			}
+		});
+	</script>
+</body>
+
+</html>
